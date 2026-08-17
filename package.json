@@ -48,6 +48,14 @@
   ],
   "author": "BOTCAHX",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hostinger-bot/btch-cli.git"
+  },
+  "homepage": "https://github.com/hostinger-bot/btch-cli",
+  "bugs": {
+    "url": "https://github.com/hostinger-bot/btch-cli/issues"
+  },
   "dependencies": {
     "@ai-sdk/mcp": "^1.0.25",
     "@ai-sdk/openai-compatible": "^2.0.35",
