@@ -26,7 +26,7 @@ What the installer does:
 
 ```bash
 # Install a specific version (keep in sync with package.json)
-curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.7
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.8
 
 # Install from a local binary instead of downloading
 bash install.sh --binary /path/to/btch
