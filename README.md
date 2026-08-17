@@ -166,10 +166,6 @@ btch fix the flaky test in src/foo.test.ts
 | **Hackable**                      | TypeScript, clear agent loop, bash-first tools—fork it, shamelessly.                                                                                                                                                       |
 
 
-### Coming soon
-
-**Deeper autonomous agent testing** — persistent sandbox sessions, richer browser workflows, and stronger "prove it works" evidence.
-
 ---
 
 ## API key (pick one)
