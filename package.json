@@ -17,6 +17,7 @@
     "dev": "bun run src/index.ts",
     "build": "tsc",
     "build:binary": "bun build --compile --outfile dist/btch-standalone ./src/index.ts",
+    "prepack": "tsc",
     "start": "bun run dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "bunx vitest run",
@@ -31,6 +32,11 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs,json}": "biome check --write --no-errors-on-unmatched"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "cli",
     "agent",
