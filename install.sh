@@ -92,7 +92,7 @@ resolve_target() {
   esac
 
   case "${OS}-${ARCH}" in
-    darwin-arm64|linux-x64|windows-x64) ;;
+    darwin-arm64|linux-x64|linux-arm64|windows-x64) ;;
     *)
       echo "Unsupported platform: ${OS}-${ARCH}" >&2
       exit 1
@@ -103,7 +103,7 @@ resolve_target() {
 
   # Older x64 CPUs (pre-AVX2, e.g. Sandy Bridge) crash with SIGILL on the
   # regular build, so pick the baseline variant automatically. Modern CPUs
-  # get the faster regular build.
+  # get the faster regular build. (ARM64 builds are always baseline-safe.)
   BASELINE_SUFFIX=""
   if [[ "$TARGET" == "linux-x64" ]] && ! cpu_supports_avx2; then
     BASELINE_SUFFIX="-baseline"

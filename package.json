@@ -17,6 +17,7 @@
     "dev": "bun run src/index.ts",
     "build": "tsc",
     "build:binary": "bun build --compile --outfile dist/btch-standalone ./src/index.ts",
+    "postinstall": "node scripts/postinstall.mjs",
     "prepack": "tsc",
     "start": "bun run dist/index.js",
     "typecheck": "tsc --noEmit",
@@ -35,7 +36,9 @@
   "files": [
     "dist/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "scripts/postinstall.mjs",
+    "scripts/install-opentui-platform.mjs"
   ],
   "keywords": [
     "cli",
@@ -63,8 +66,8 @@
     "@coinbase/agentkit": "^0.10.4",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@npmcli/arborist": "^9.4.2",
-    "@opentui/core": "^0.1.88",
-    "@opentui/react": "^0.1.88",
+    "@opentui/core": "0.1.88",
+    "@opentui/react": "0.1.88",
     "agent-desktop": "^0.1.11",
     "ai": "^6.0.116",
     "commander": "^12.1.0",

@@ -56,6 +56,18 @@ yarn global add btch-cli
 > The `install.sh` one-liner above produces a standalone binary that needs no
 > runtime at all — prefer it if you don't want Bun installed.
 
+**Android / Termux:**
+
+- **npm route** (recommended) — `npm install -g btch-cli` works on Termux.
+  The installer auto-detects Termux and installs OpenTUI's native ARM64
+  component, which npm normally skips on Android. Requires Bun for Android
+  (Bun ≥ 1.3.14 supports Android natively; install it with
+  `curl -fsSL https://bun.sh/install | bash` or via Termux packages).
+- **Headless mode** — `btch --prompt "..."` does not need the interactive UI
+  and is the most reliable way to run the agent inside Termux.
+- The standalone `install.sh` binary also ships an ARM64 build
+  (`btch-linux-arm64`, cross-compiled), so Raspberry Pi / ARM Linux works too.
+
 **Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
 
 ---

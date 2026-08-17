@@ -38,6 +38,12 @@ jobs:
             build_output: btch
             asset_name: btch-darwin-arm64
             compile_target: bun-darwin-arm64
+          # ARM64 Linux (Raspberry Pi, ARM servers, Android/Termux with Bun).
+          # Cross-compiled from the x64 ubuntu runner via Bun's --target.
+          - runner: ubuntu-latest
+            build_output: btch-arm64
+            asset_name: btch-linux-arm64
+            compile_target: bun-linux-arm64
           - runner: windows-latest
             build_output: btch.exe
             asset_name: btch-windows-x64.exe
@@ -72,6 +78,15 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      # bun install only installs the OpenTUI platform package matching the
+      # *build host* (x64), so cross-compiling the arm64 binary needs the
+      # linux-arm64 native package present too (Bun bundles it at build time).
+      # The shared script downloads the tarball directly, bypassing npm's
+      # os/cpu check without touching package.json/lockfiles.
+      - name: Install ARM64 OpenTUI native package (cross-compile)
+        if: matrix.asset_name == 'btch-linux-arm64'
+        run: node scripts/install-opentui-platform.mjs @opentui/core-linux-arm64
 
       - name: Compile standalone binary
         run: bun build --compile --target="${{ matrix.compile_target }}" --outfile "release/${{ matrix.build_output }}" ./src/index.ts
@@ -145,6 +160,7 @@ jobs:
           files: |
             release-assets/**/btch-linux-x64
             release-assets/**/btch-linux-x64-baseline
+            release-assets/**/btch-linux-arm64
             release-assets/**/btch-darwin-arm64
             release-assets/**/btch-windows-x64.exe
             release-assets/checksums.txt
