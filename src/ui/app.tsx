@@ -2376,6 +2376,9 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
         case "models":
           openModelPicker();
           break;
+        case "apikey":
+          openApiKeyModal();
+          break;
         case "sandbox":
           openSandboxPicker();
           break;
@@ -2451,6 +2454,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       agent,
       handleExit,
       openAgentsModal,
+      openApiKeyModal,
       openMcpModal,
       openModelPicker,
       openRecapPicker,
