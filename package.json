@@ -1,6 +1,6 @@
 {
   "name": "btch-cli",
-  "version": "3.0.8",
+  "version": "3.0.9",
   "description": "An open-source AI coding agent, built with Bun and OpenTUI.",
   "type": "module",
   "main": "dist/index.js",

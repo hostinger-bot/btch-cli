@@ -796,8 +796,33 @@ export class Agent {
     return this.getSessionSnapshot();
   }
 
+  resumeSession(id: string): SessionSnapshot | null {
+    if (!this.sessionStore || !this.workspace) return null;
+
+    const session = this.sessionStore.getSessionById(id);
+    if (!session) return null;
+
+    this.session = session;
+    this.workspace = this.sessionStore.getWorkspace();
+    this.mode = session.mode;
+    this.modelId = normalizeModelId(session.model);
+    this.sessionStore.touchSession(session.id, this.bash.getCwd());
+    const transcript = loadTranscriptState(session.id);
+    this.messages = transcript.messages;
+    this.messageSeqs = transcript.seqs;
+    // Leave the flag false so the next processMessage() fires the
+    // SessionStart hook with source "resume" (it derives isResume from
+    // this.messages.length), matching the constructor's behaviour.
+    this.sessionStartHookFired = false;
+    return this.getSessionSnapshot();
+  }
+
   getSessionInfo(): SessionInfo | null {
     return this.session;
+  }
+
+  listSessions(limit = 50): SessionInfo[] {
+    return this.sessionStore?.listSessions(limit) ?? [];
   }
 
   getSessionId(): string | null {

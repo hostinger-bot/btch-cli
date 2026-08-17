@@ -74,6 +74,20 @@ export class SessionStore {
     return this.getRequiredSession(id);
   }
 
+  listSessions(limit = 50): SessionInfo[] {
+    const rows = getDatabase()
+      .prepare(`
+      SELECT id, workspace_id, title, recap_text, recap_model, recap_updated_at, model, mode, cwd_at_start, cwd_last, status, created_at, updated_at
+      FROM sessions
+      WHERE workspace_id = ?
+      ORDER BY updated_at DESC
+      LIMIT ?
+    `)
+      .all(this.workspace.id, limit) as SessionRow[];
+
+    return rows.map(toSessionInfo);
+  }
+
   getLatestSession(): SessionInfo | null {
     const row = getDatabase()
       .prepare(`

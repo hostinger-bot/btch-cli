@@ -29,6 +29,7 @@ import type {
   Plan,
   PlanQuestion,
   ReasoningEffort,
+  SessionInfo,
   SubagentStatus,
   ToolCall,
   ToolResult,
@@ -337,6 +338,7 @@ const BUILTIN_TYPED_SLASH_COMMANDS = new Set([
   "/sandbox",
   "/recap",
   "/recaps",
+  "/resume",
   "/remote-control",
   "/mcp",
   "/mcps",
@@ -612,6 +614,9 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [modelPickerIndex, setModelPickerIndex] = useState(0);
   const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const [showResumePicker, setShowResumePicker] = useState(false);
+  const [resumePickerIndex, setResumePickerIndex] = useState(0);
+  const [resumeSessions, setResumeSessions] = useState<SessionInfo[]>([]);
   const [modelsRefreshing, setModelsRefreshing] = useState(false);
   const [modelListVersion, setModelListVersion] = useState(0);
   const [showSandboxPicker, setShowSandboxPicker] = useState(false);
@@ -2233,6 +2238,43 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
     });
   }, []);
 
+  const openResumePicker = useCallback(() => {
+    const sessions = agent.listSessions();
+    // Put the current session last so resuming picks an earlier one.
+    const currentId = agent.getSessionId();
+    const sorted = [...sessions].sort((a, b) => {
+      if (a.id === currentId) return 1;
+      if (b.id === currentId) return -1;
+      return b.updatedAt.getTime() - a.updatedAt.getTime();
+    });
+    setResumeSessions(sorted);
+    setResumePickerIndex(0);
+    setShowResumePicker(true);
+  }, [agent]);
+
+  const resumeToSession = useCallback(
+    (session: SessionInfo) => {
+      const snapshot = agent.resumeSession(session.id);
+      setShowResumePicker(false);
+      if (!snapshot) return;
+      setMessages(snapshot.entries);
+      setExpandedMessages(new Set());
+      activeTurnRef.current = null;
+      clearLiveTurnUi();
+      setSessionTitle(snapshot.session.title ?? null);
+      setSessionId(snapshot.session.id);
+      setSessionRecap(agent.getSessionRecap());
+      setModel(snapshot.session.model);
+      setModeState(snapshot.session.mode);
+      setActivePlan(null);
+      setPqs(initialPlanQuestionsState());
+      replacePasteBlocks([]);
+      queuedMessagesRef.current = [];
+      setQueuedMessages([]);
+    },
+    [agent, clearLiveTurnUi, replacePasteBlocks],
+  );
+
   const handleCommand = useCallback(
     (cmd: string): boolean => {
       const c = cmd.trim().toLowerCase();
@@ -2254,6 +2296,10 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       }
       if (c === "/recap" || c === "/recaps") {
         openRecapPicker();
+        return true;
+      }
+      if (c === "/resume" || c === "/history" || c === "/sessions") {
+        openResumePicker();
         return true;
       }
       if (c === "/wallet") {
@@ -2356,6 +2402,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       openMcpModal,
       openModelPicker,
       openRecapPicker,
+      openResumePicker,
       openSandboxPicker,
       openWalletPicker,
       openScheduleModal,
@@ -2384,6 +2431,9 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
           break;
         case "recaps":
           openRecapPicker();
+          break;
+        case "resume":
+          openResumePicker();
           break;
         case "wallet":
           openWalletPicker();
@@ -2458,6 +2508,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       openMcpModal,
       openModelPicker,
       openRecapPicker,
+      openResumePicker,
       openSandboxPicker,
       openWalletPicker,
       openScheduleModal,
@@ -2474,6 +2525,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
     showMcpModal ||
     showSandboxPicker ||
     showRecapPicker ||
+    showResumePicker ||
     showWalletPicker ||
     !!pendingPaymentApproval ||
     showScheduleModal ||
@@ -3022,6 +3074,28 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
         }
         return;
       }
+      if (showResumePicker) {
+        if (isEscapeKey(key)) {
+          setShowResumePicker(false);
+          return;
+        }
+        if (key.name === "up") {
+          setResumePickerIndex((i) => Math.max(0, i - 1));
+          return;
+        }
+        if (key.name === "down") {
+          setResumePickerIndex((i) => Math.min(resumeSessions.length - 1, i + 1));
+          return;
+        }
+        if (key.name === "return") {
+          const sel = resumeSessions[resumePickerIndex];
+          if (sel) {
+            resumeToSession(sel);
+          }
+          return;
+        }
+        return;
+      }
       if (pendingPaymentApproval) {
         if (isEscapeKey(key)) {
           setPendingPaymentApproval(null);
@@ -3337,6 +3411,9 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       planTabCount,
       pqs,
       removeEditingSubagent,
+      resumePickerIndex,
+      resumeSessions,
+      resumeToSession,
       applyRecapsEnabled,
       applySandboxMode,
       applySandboxSettings,
@@ -3349,6 +3426,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       showModelPicker,
       showPlanPanel,
       showRecapPicker,
+      showResumePicker,
       showSandboxPicker,
       pendingPaymentApproval,
       processMessage,
@@ -3522,6 +3600,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
                 inputRef={inputRef}
                 isProcessing={isProcessing}
                 showModelPicker={showModelPicker}
+                showResumePicker={showResumePicker}
                 showSandboxPicker={showSandboxPicker}
                 showWalletPicker={showWalletPicker}
                 showSlashMenu={showSlashMenu}
@@ -3562,6 +3641,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
                 inputRef={inputRef}
                 isProcessing={isProcessing}
                 showModelPicker={showModelPicker}
+                showResumePicker={showResumePicker}
                 showSandboxPicker={showSandboxPicker}
                 showWalletPicker={showWalletPicker}
                 showSlashMenu={showSlashMenu}
@@ -3723,6 +3803,15 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
           refreshing={modelsRefreshing}
         />
       )}
+      {showResumePicker && (
+        <ResumePickerModal
+          t={t}
+          sessions={resumeSessions}
+          selectedIndex={resumePickerIndex}
+          width={width}
+          height={height}
+        />
+      )}
       {showWalletPicker && (
         <WalletPickerModal
           t={t}
@@ -3853,6 +3942,7 @@ function PromptBox({
   inputRef,
   isProcessing,
   showModelPicker,
+  showResumePicker,
   showSandboxPicker,
   showWalletPicker,
   showSlashMenu,
@@ -3875,6 +3965,7 @@ function PromptBox({
   inputRef: React.RefObject<TextareaRenderable | null>;
   isProcessing: boolean;
   showModelPicker: boolean;
+  showResumePicker: boolean;
   showSandboxPicker: boolean;
   showWalletPicker: boolean;
   showSlashMenu: boolean;
@@ -3948,6 +4039,7 @@ function PromptBox({
               ref={inputRef}
               focused={
                 !showModelPicker &&
+                !showResumePicker &&
                 !showSandboxPicker &&
                 !showWalletPicker &&
                 !showSlashMenu &&
@@ -5455,6 +5547,101 @@ function ModelPickerModal({
           <text fg={t.textMuted}>
             {selectedSupportsReasoning ? "left/right reasoning  enter select  esc close" : "enter select  esc close"}
           </text>
+        </box>
+      </box>
+    </box>
+  );
+}
+
+function formatSessionTime(d: Date): string {
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function ResumePickerModal({
+  t,
+  sessions,
+  selectedIndex,
+  width,
+  height,
+}: {
+  t: Theme;
+  sessions: SessionInfo[];
+  selectedIndex: number;
+  width: number;
+  height: number;
+}) {
+  const listRef = useRef<ScrollBoxRenderable>(null);
+  useEffect(() => {
+    const s = sessions[selectedIndex];
+    if (s) listRef.current?.scrollChildIntoView(`resume-${s.id}`);
+  }, [selectedIndex, sessions]);
+
+  const itemCount = Math.max(sessions.length, 1);
+  const contentHeight = itemCount + 5;
+  const panelHeight = Math.min(contentHeight, Math.floor(height * 0.6));
+  const top = bottomAlignedModalTop(height, panelHeight);
+  const overlayBg = "#000000cc" as string;
+  return (
+    <box
+      position="absolute"
+      left={0}
+      top={0}
+      width={width}
+      height={height}
+      alignItems="center"
+      paddingTop={top}
+      backgroundColor={overlayBg}
+    >
+      <box
+        width={Math.min(72, width - 6)}
+        height={panelHeight}
+        backgroundColor={t.backgroundPanel}
+        paddingTop={1}
+        paddingBottom={1}
+        flexDirection="column"
+      >
+        <box flexShrink={0} flexDirection="row" justifyContent="space-between" paddingLeft={2} paddingRight={2}>
+          <text fg={t.primary}>
+            <b>{"Resume session"}</b>
+          </text>
+          <text fg={t.textMuted}>{"esc"}</text>
+        </box>
+        <scrollbox ref={listRef} flexGrow={1} minHeight={0}>
+          {sessions.map((s, idx) => {
+            const selected = idx === selectedIndex;
+            const title = s.title || "(untitled)";
+            return (
+              <box
+                key={s.id}
+                id={`resume-${s.id}`}
+                backgroundColor={selected ? t.selectedBg : undefined}
+                paddingLeft={2}
+                paddingRight={2}
+                width="100%"
+              >
+                <box width="100%" flexDirection="row" justifyContent="space-between">
+                  <text fg={selected ? t.selected : t.text}>{title}</text>
+                  <text fg={selected ? t.primary : t.textMuted}>
+                    {`${s.mode} · ${s.model} · ${formatSessionTime(s.updatedAt)}`}
+                  </text>
+                </box>
+              </box>
+            );
+          })}
+          {sessions.length === 0 && (
+            <box paddingLeft={2}>
+              <text fg={t.textMuted}>{"No previous sessions found"}</text>
+            </box>
+          )}
+        </scrollbox>
+        <box flexShrink={0} paddingLeft={2} paddingRight={2} paddingTop={1}>
+          <text fg={t.textMuted}>{"arrows navigate  enter resume  esc close"}</text>
         </box>
       </box>
     </box>
