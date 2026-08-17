@@ -102,6 +102,16 @@ EOF
     exit 1
   fi
 
+  # Remove leftovers from a previous script-based install (the glibc binary
+  # that crashes on Termux, plus its symlinks). npm refuses to overwrite an
+  # existing file at its global bin path (EEXIST), so clear them first.
+  rm -f "$HOME/.btch/bin/btch"
+  rm -f "/usr/local/bin/btch"
+  if [[ -n "${PREFIX:-}" ]]; then
+    rm -f "${PREFIX}/bin/btch"
+  fi
+  rm -rf "$HOME/.btch"
+
   echo "Installing btch-cli via npm..."
   npm install -g btch-cli
   echo ""
