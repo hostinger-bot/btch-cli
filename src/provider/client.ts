@@ -11,8 +11,8 @@ export type RuntimeModel = ChatModel;
 export const PROVIDER_NAME = "btch";
 export const DEFAULT_BASE_URL = "https://ai.tioo.eu.org/v1";
 
-const DEFAULT_TITLE_MODEL = "deepseek-v4-flash";
-const DEFAULT_RECAP_MODEL = "deepseek-v4-flash";
+const DEFAULT_TITLE_MODEL = "auto";
+const DEFAULT_RECAP_MODEL = "auto";
 
 interface GeneratedTextResult {
   modelId: string;

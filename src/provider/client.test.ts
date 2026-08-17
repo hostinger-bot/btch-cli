@@ -37,7 +37,7 @@ describe("client", () => {
 
       expect(result).toEqual({
         recap: "Wrapped up the parser fix. Next step is wiring the new recap banner.",
-        modelId: "deepseek-v4-flash",
+        modelId: "auto",
         usage: { inputTokens: 11, outputTokens: 7, totalTokens: 18 },
       });
       expect(mockGenerateText).toHaveBeenCalledWith(
@@ -57,7 +57,7 @@ describe("client", () => {
 
       expect(result).toEqual({
         recap: "",
-        modelId: "deepseek-v4-flash",
+        modelId: "auto",
       });
     });
   });

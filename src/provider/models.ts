@@ -57,8 +57,7 @@ for (const model of MODELS) {
   }
 }
 
-export const DEFAULT_MODEL =
-  MODELS.find((model) => model.id === "deepseek-v4-flash")?.id ?? MODELS[0]?.id ?? "deepseek-v4-flash";
+export const DEFAULT_MODEL = MODELS.find((model) => model.id === "auto")?.id ?? MODELS[0]?.id ?? "auto";
 
 let remoteModels: ModelInfo[] = [];
 

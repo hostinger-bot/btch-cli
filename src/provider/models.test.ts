@@ -17,7 +17,7 @@ describe("models", () => {
   });
 
   it("keeps a canonical fallback default model", () => {
-    expect(DEFAULT_MODEL).toBe("deepseek-v4-flash");
+    expect(DEFAULT_MODEL).toBe("auto");
   });
 
   it("normalizes model ids case-insensitively and strips provider prefixes", () => {

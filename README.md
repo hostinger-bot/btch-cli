@@ -267,7 +267,7 @@ Optional `**subAgents**` — custom foreground sub-agents. Each entry needs `**n
   "subAgents": [
     {
       "name": "security-review",
-      "model": "deepseek-v4-flash",
+      "model": "auto",
       "instruction": "Prioritize security implications and suggest concrete fixes."
     }
   ]
