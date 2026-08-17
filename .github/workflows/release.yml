@@ -25,12 +25,17 @@ jobs:
           - runner: ubuntu-latest
             build_output: btch
             asset_name: btch-linux-x64
+            # Baseline target so the binary runs on older CPUs (pre-AVX2)
+            # such as Sandy Bridge VMs instead of crashing with SIGILL.
+            compile_target: bun-linux-x64-baseline
           - runner: macos-latest
             build_output: btch
             asset_name: btch-darwin-arm64
+            compile_target: bun-darwin-arm64
           - runner: windows-latest
             build_output: btch.exe
             asset_name: btch-windows-x64.exe
+            compile_target: bun-windows-x64
 
     runs-on: ${{ matrix.runner }}
 
@@ -51,7 +56,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Compile standalone binary
-        run: bun build --compile --outfile "release/${{ matrix.build_output }}" ./src/index.ts
+        run: bun build --compile --target="${{ matrix.compile_target }}" --outfile "release/${{ matrix.build_output }}" ./src/index.ts
 
       - name: Compute checksum (unix)
         if: runner.os != 'Windows'
