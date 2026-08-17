@@ -331,6 +331,7 @@ async function fetchReleaseJson(url: string): Promise<GitHubRelease | null> {
 
 function normalizeReleaseVersion(tagName: string): string | null {
   let version = tagName;
+  if (version.startsWith("btch-dev@")) version = version.slice("btch-dev@".length);
   if (version.startsWith("btch-cli@")) version = version.slice("btch-cli@".length);
   if (version.startsWith("v")) version = version.slice(1);
   return semverValid(version);
