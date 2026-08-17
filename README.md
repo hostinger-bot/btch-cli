@@ -26,7 +26,7 @@ What the installer does:
 
 ```bash
 # Install a specific version
-curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 1.0.2
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.0
 
 # Install from a local binary instead of downloading
 bash install.sh --binary /path/to/btch
@@ -35,11 +35,26 @@ bash install.sh --binary /path/to/btch
 curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --no-modify-path
 ```
 
-**Alternative install** (requires Bun on PATH):
+**Install from the npm registry** (package is published as [`btch-cli`](https://www.npmjs.com/package/btch-cli) on every release):
 
 ```bash
+# Bun
 bun add -g btch-cli
+
+# npm
+npm install -g btch-cli
+
+# pnpm
+pnpm add -g btch-cli
+
+# yarn
+yarn global add btch-cli
 ```
+
+> The registry package runs on the **Bun runtime** (the CLI uses `bun:sqlite`),
+> so make sure Bun is installed and on your `PATH` before using this option.
+> The `install.sh` one-liner above produces a standalone binary that needs no
+> runtime at all — prefer it if you don't want Bun installed.
 
 **Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
 
@@ -379,17 +394,38 @@ bun run lint
 
 ### Releasing
 
-To ship a new version, just create a release in the GitHub UI
-(`Releases → Draft a new release`): pick a tag like `btch-dev@1.0.4` (or let
-GitHub create it), fill in the notes, and hit **Publish release**. That's it —
-the `Release` workflow handles everything else automatically:
+Releases are driven by the `Release` GitHub Actions workflow: it builds all
+binaries, attaches them to the release, and publishes the matching version to
+npm — but **you must bump the version yourself** first. Follow these steps in
+order:
 
-- Builds `btch-linux-x64`, `btch-linux-x64-baseline`, `btch-darwin-arm64`, and
-  `btch-windows-x64.exe` on native runners and attaches them with `checksums.txt`
-- **Publishes the same version to npm** (requires the `NPM_TOKEN` secret in
-  repo settings — version is taken from the tag, so no manual version bump needed)
+1. **Bump the version** in `package.json` (semver — `3.0.1` for a patch,
+   `3.1.0` for a feature, `4.0.0` for breaking changes).
 
-So releasing `btch-dev@1.0.4` publishes `btch-cli@1.0.4` to npm automatically.
+2. **Update `CHANGELOG.md`** — add a `## [x.y.z] - YYYY-MM-DD` entry at the
+   top describing what changed.
+
+3. **Commit and push**:
+
+   ```bash
+   git add package.json CHANGELOG.md
+   git commit -m "chore: bump version to x.y.z"
+   git push
+   ```
+
+4. **Create the release** in the GitHub UI
+   (`Releases → Draft a new release`): choose the tag `btch-dev@x.y.z`
+   (check **Create new tag on publish** if it does not exist yet), point it at
+   `main`, write the release notes, and hit **Publish release**.
+
+5. **Verify** the `Release` workflow run (Actions tab) succeeds:
+   - builds `btch-linux-x64`, `btch-linux-x64-baseline`, `btch-darwin-arm64`,
+     `btch-windows-x64.exe` and attaches them with `checksums.txt`
+   - publishes `btch-cli@x.y.z` to npm (requires the `NPM_TOKEN` secret in
+     repo settings)
+
+That's it — the version in the tag, the binaries, and the npm package all end
+up as the same `x.y.z`.
 
 Alternatively, run the workflow manually from the **Actions** tab
 (`Release → Run workflow`) and enter the tag to publish.
