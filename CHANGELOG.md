@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.5] - 2026-08-17
+
+### Added
+- **Native Android (Termux) build**: release now ships `btch-android-arm64` (bionic-linked, Bun 1.3.14+ `bun-android-arm64` target) that runs directly on Termux with the full interactive TUI
+- `install.sh` detects Termux automatically and downloads the Android build (plus symlinks to `$PREFIX/bin`)
+
+### Fixed
+- `install.sh` on Termux previously downloaded the glibc `linux-arm64` binary, which cannot execute on Termux (bionic libc) — `cannot execute: required file not found`
+
 ## [3.0.4] - 2026-08-17
 
 ### Added

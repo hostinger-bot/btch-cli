@@ -68,18 +68,32 @@ done
 mkdir -p "$INSTALL_DIR"
 chmod 700 "$USER_DIR" "$INSTALL_DIR"
 
+is_termux() {
+  # Android/Termux uses the bionic libc, so the glibc linux-arm64 binary
+  # cannot run there ("cannot execute: required file not found"). Detect it
+  # and pick the dedicated android-arm64 build instead.
+  [[ -n "${TERMUX_VERSION:-}" ]] && return 0
+  [[ -d /data/data/com.termux ]] && return 0
+  [[ "$(uname -o 2>/dev/null)" == "Android" ]] && return 0
+  return 1
+}
+
 resolve_target() {
   local raw_os arch
   raw_os=$(uname -s)
-  case "$raw_os" in
-    Darwin*) OS="darwin" ;;
-    Linux*)  OS="linux" ;;
-    MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
-    *)
-      echo "Unsupported OS: ${raw_os}" >&2
-      exit 1
-      ;;
-  esac
+  if is_termux; then
+    OS="android"
+  else
+    case "$raw_os" in
+      Darwin*) OS="darwin" ;;
+      Linux*)  OS="linux" ;;
+      MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+      *)
+        echo "Unsupported OS: ${raw_os}" >&2
+        exit 1
+        ;;
+    esac
+  fi
 
   arch=$(uname -m)
   case "$arch" in
@@ -92,7 +106,7 @@ resolve_target() {
   esac
 
   case "${OS}-${ARCH}" in
-    darwin-arm64|linux-x64|linux-arm64|windows-x64) ;;
+    darwin-arm64|linux-x64|linux-arm64|android-arm64|windows-x64) ;;
     *)
       echo "Unsupported platform: ${OS}-${ARCH}" >&2
       exit 1
@@ -165,18 +179,27 @@ METAEOF
 
 setup_global_symlink() {
   # Create a symlink in a system bin dir that is already on PATH (e.g.
-  # /usr/local/bin) so `btch` works immediately in the current session
-  # without needing to source shell config. Only done when possible; the
-  # script falls back to the PATH hint otherwise.
+  # /usr/local/bin, or $PREFIX/bin on Termux) so `btch` works immediately in
+  # the current session without needing to source shell config. Only done
+  # when possible; the script falls back to the PATH hint otherwise.
   GLOBAL_BIN_PATH=""
   [[ "$TARGET" == windows-* ]] && return 0
-  [[ -w /usr/local/bin ]] || return 0
-  if [[ -e "/usr/local/bin/${BINARY_NAME}" ]] && [[ ! -L "/usr/local/bin/${BINARY_NAME}" ]]; then
+
+  local bin_dir=""
+  if is_termux && [[ -n "${PREFIX:-}" ]] && [[ -w "${PREFIX}/bin" ]]; then
+    # Termux keeps $PREFIX/bin (e.g. /data/data/com.termux/files/usr/bin) on PATH.
+    bin_dir="${PREFIX}/bin"
+  elif [[ -w /usr/local/bin ]]; then
+    bin_dir="/usr/local/bin"
+  fi
+  [[ -n "$bin_dir" ]] || return 0
+
+  if [[ -e "${bin_dir}/${BINARY_NAME}" ]] && [[ ! -L "${bin_dir}/${BINARY_NAME}" ]]; then
     # A real file (not our symlink) already exists; don't clobber it.
     return 0
   fi
-  if ln -sf "${INSTALL_DIR}/${BINARY_NAME}" "/usr/local/bin/${BINARY_NAME}" 2>/dev/null; then
-    GLOBAL_BIN_PATH="/usr/local/bin/${BINARY_NAME}"
+  if ln -sf "${INSTALL_DIR}/${BINARY_NAME}" "${bin_dir}/${BINARY_NAME}" 2>/dev/null; then
+    GLOBAL_BIN_PATH="${bin_dir}/${BINARY_NAME}"
   fi
 }
 
