@@ -22,11 +22,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Modern CPUs (AVX2). install.sh picks this when the CPU supports it.
           - runner: ubuntu-latest
             build_output: btch
             asset_name: btch-linux-x64
-            # Baseline target so the binary runs on older CPUs (pre-AVX2)
-            # such as Sandy Bridge VMs instead of crashing with SIGILL.
+            compile_target: bun-linux-x64
+          # Baseline target for older CPUs (pre-AVX2) such as Sandy Bridge VMs
+          # that would otherwise crash with SIGILL. install.sh picks this when
+          # the CPU lacks AVX2.
+          - runner: ubuntu-latest
+            build_output: btch-baseline
+            asset_name: btch-linux-x64-baseline
             compile_target: bun-linux-x64-baseline
           - runner: macos-latest
             build_output: btch
@@ -126,6 +132,7 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-alpha') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-pre') }}
           files: |
             release-assets/**/btch-linux-x64
+            release-assets/**/btch-linux-x64-baseline
             release-assets/**/btch-darwin-arm64
             release-assets/**/btch-windows-x64.exe
             release-assets/checksums.txt

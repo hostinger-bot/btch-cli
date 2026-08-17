@@ -100,13 +100,34 @@ resolve_target() {
   esac
 
   TARGET="${OS}-${ARCH}"
+
+  # Older x64 CPUs (pre-AVX2, e.g. Sandy Bridge) crash with SIGILL on the
+  # regular build, so pick the baseline variant automatically. Modern CPUs
+  # get the faster regular build.
+  BASELINE_SUFFIX=""
+  if [[ "$TARGET" == "linux-x64" ]] && ! cpu_supports_avx2; then
+    BASELINE_SUFFIX="-baseline"
+  fi
+
   if [[ "$TARGET" == windows-* ]]; then
-    ASSET_NAME="btch-${TARGET}.exe"
+    ASSET_NAME="btch-${TARGET}${BASELINE_SUFFIX}.exe"
     BINARY_NAME="btch.exe"
   else
-    ASSET_NAME="btch-${TARGET}"
+    ASSET_NAME="btch-${TARGET}${BASELINE_SUFFIX}"
     BINARY_NAME="btch"
   fi
+}
+
+cpu_supports_avx2() {
+  if [[ -r /proc/cpuinfo ]] && grep -q '\bavx2\b' /proc/cpuinfo; then
+    return 0
+  fi
+  if command -v sysctl >/dev/null 2>&1; then
+    # macOS/BSD fallback; btch only ships a baseline for linux-x64, so this
+    # is only consulted on non-Linux platforms where it returns 0 anyway.
+    sysctl -a 2>/dev/null | grep -qi 'avx2' && return 0
+  fi
+  return 1
 }
 
 json_escape() {

@@ -144,7 +144,9 @@ export function getScriptInstallContext(homeDir = os.homedir()): ScriptInstallCo
   if (metadata) {
     return {
       metadata,
-      target: getReleaseTargetForPlatformKey(metadata.target) ?? target,
+      // Honor the exact asset installed (e.g. btch-linux-x64-baseline on
+      // pre-AVX2 CPUs) so updates keep using the same binary variant.
+      target: { ...(getReleaseTargetForPlatformKey(metadata.target) ?? target), assetName: metadata.assetName },
       binaryPath: metadata.binaryPath,
     };
   }

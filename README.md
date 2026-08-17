@@ -12,6 +12,8 @@ The model list is **auto-fetched from your endpoint** when the CLI starts, so yo
 curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
 ```
 
+The installer auto-detects your OS, architecture, and CPU capabilities — on x64 machines without AVX2 (e.g. older VMs) it automatically downloads the `-baseline` build so the binary runs instead of crashing.
+
 **Alternative installs** (requires Bun on PATH):
 
 ```bash
