@@ -1,0 +1,59 @@
+---
+description: Project overview and architecture reference
+globs: "**/*"
+alwaysApply: true
+---
+
+# btch-cli — Project Overview
+
+btch-cli is an open-source AI coding agent that brings AI assistance directly into the terminal. It talks to any OpenAI-compatible endpoint (default: `https://ai.tioo.eu.org/v1`).
+
+## Tech Stack
+
+- **Language**: TypeScript (ES2022, ESNext modules)
+- **Runtime**: Bun (primary)
+- **UI Framework**: React with [OpenTUI](https://github.com/anomalyco/opentui) for terminal rendering
+- **Build**: `tsc` (TypeScript compiler)
+- **Package Manager**: Bun
+- **API Client**: `@ai-sdk/openai-compatible` for any OpenAI-compatible endpoint
+- **Tools**: Bash-only (all file operations via shell commands)
+
+## Architecture
+
+```
+src/
+├── index.ts          # CLI entry point (Commander.js + OpenTUI)
+├── agent/
+│   └── agent.ts      # Agent — orchestrates provider, bash tool
+├── provider/
+│   ├── client.ts     # OpenAI-compatible provider client
+│   ├── models.ts     # Model definitions (auto-fetched from endpoint)
+│   └── tools.ts      # Tool schemas (bash, etc.)
+├── tools/
+│   └── bash.ts       # Bash command execution
+├── ui/
+│   └── app.tsx       # OpenTUI React terminal UI
+├── utils/
+│   ├── settings.ts   # User and project settings
+│   ├── git-root.ts   # Resolve git repository root for AGENTS.md discovery
+│   └── instructions.ts # AGENTS.md (ecosystem) custom instructions
+└── types/
+    └── index.ts      # Shared TypeScript types
+```
+
+## Key Patterns
+
+- **Agent loop**: `Agent.processMessage()` is an async generator that yields `StreamChunk` objects — the LLM responds, tools execute, results feed back until no more tool calls remain.
+- **Bash-only tools**: The agent uses bash for everything (file editing, searching, git, builds, etc.).
+- **Settings hierarchy**: Environment variables → User-level (`~/.btch/user-settings.json`) → Project-level (`.btch/settings.json`).
+- **Custom instructions**: `~/.btch/AGENTS.md`, then `AGENTS.override.md` / `AGENTS.md` per directory from git root through the workspace cwd (Codex-style merge).
+- **ESM only**: The project uses `"type": "module"` — all imports use `.js` extensions for compiled output.
+
+## Models
+
+The model list is auto-fetched from the configured endpoint (`/v1/models`) when the CLI starts, with a small fallback list if the endpoint is unreachable.
+
+## CI/CD
+
+- **typecheck.yml**: Runs `tsc --noEmit` on push/PR to `main`/`develop`.
+- **security.yml**: Runs `npm audit` and TruffleHog secret scanning.
