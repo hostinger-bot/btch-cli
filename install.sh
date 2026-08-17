@@ -156,10 +156,28 @@ write_metadata() {
   "target": "$(json_escape "$TARGET")",
   "installedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "shellConfigPath": $(json_or_null "$written_config_file"),
-  "pathCommand": $(json_or_null "$written_path_command")
+  "pathCommand": $(json_or_null "$written_path_command"),
+  "globalBinPath": $(json_or_null "$GLOBAL_BIN_PATH")
 }
 METAEOF
   chmod 600 "$METADATA_PATH"
+}
+
+setup_global_symlink() {
+  # Create a symlink in a system bin dir that is already on PATH (e.g.
+  # /usr/local/bin) so `btch` works immediately in the current session
+  # without needing to source shell config. Only done when possible; the
+  # script falls back to the PATH hint otherwise.
+  GLOBAL_BIN_PATH=""
+  [[ "$TARGET" == windows-* ]] && return 0
+  [[ -w /usr/local/bin ]] || return 0
+  if [[ -e "/usr/local/bin/${BINARY_NAME}" ]] && [[ ! -L "/usr/local/bin/${BINARY_NAME}" ]]; then
+    # A real file (not our symlink) already exists; don't clobber it.
+    return 0
+  fi
+  if ln -sf "${INSTALL_DIR}/${BINARY_NAME}" "/usr/local/bin/${BINARY_NAME}" 2>/dev/null; then
+    GLOBAL_BIN_PATH="/usr/local/bin/${BINARY_NAME}"
+  fi
 }
 
 sha256_file() {
@@ -323,6 +341,7 @@ else
   install_downloaded_release
 fi
 
+setup_global_symlink
 maybe_update_path
 resolve_installed_version
 write_metadata "$INSTALLED_VERSION"

@@ -35,6 +35,7 @@ export interface ScriptInstallMetadata {
   installedAt: string;
   shellConfigPath?: string;
   pathCommand?: string;
+  globalBinPath?: string;
 }
 
 export interface ScriptInstallContext {
@@ -124,6 +125,7 @@ export function loadScriptInstallMetadata(homeDir = os.homedir()): ScriptInstall
       installedAt: typeof parsed.installedAt === "string" ? parsed.installedAt : new Date(0).toISOString(),
       shellConfigPath: typeof parsed.shellConfigPath === "string" ? parsed.shellConfigPath : undefined,
       pathCommand: typeof parsed.pathCommand === "string" ? parsed.pathCommand : undefined,
+      globalBinPath: typeof parsed.globalBinPath === "string" ? parsed.globalBinPath : undefined,
     };
   } catch {
     return null;
@@ -237,6 +239,10 @@ export function buildScriptUninstallPlan(
   const userDir = getBtchUserDir(homeDir);
   const removePaths = new Set<string>();
   const pruneDirs = new Set<string>();
+
+  // Remove the global symlink (e.g. /usr/local/bin/btch) created by the
+  // installer so uninstalling does not leave a dangling link behind.
+  if (context.metadata.globalBinPath) removePaths.add(context.metadata.globalBinPath);
 
   if (!options.keepConfig && !options.keepData) {
     removePaths.add(userDir);

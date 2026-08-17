@@ -137,6 +137,32 @@ describe("buildScriptUninstallPlan", () => {
     expect(plan?.removePaths).toContain(path.join(homeDir, ".btch"));
   });
 
+  it("removes the global symlink when recorded in metadata", () => {
+    const homeDir = createTempDir("btch-symlink-");
+    const installDir = getScriptInstallDir(homeDir);
+    const currentTarget = getReleaseTargetForPlatform()!;
+    fs.mkdirSync(installDir, { recursive: true });
+
+    saveScriptInstallMetadata(
+      {
+        schemaVersion: 1,
+        installMethod: "script" as const,
+        version: "1.2.3",
+        repo: "hostinger-bot/btch-cli",
+        binaryPath: path.join(installDir, currentTarget.binaryName),
+        installDir,
+        assetName: currentTarget.assetName,
+        target: currentTarget.key,
+        installedAt: "2026-04-03T00:00:00.000Z",
+        globalBinPath: "/usr/local/bin/btch",
+      },
+      homeDir,
+    );
+
+    const plan = buildScriptUninstallPlan({}, homeDir);
+    expect(plan?.removePaths).toContain("/usr/local/bin/btch");
+  });
+
   it("keeps config and data when requested", () => {
     const homeDir = createTempDir("btch-keep-");
     const installDir = getScriptInstallDir(homeDir);
