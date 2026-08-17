@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] - 2026-08-17
+
+### Added
+- ARM64 Linux support: release now ships `btch-linux-arm64` (cross-compiled) for Raspberry Pi / ARM Linux
+- Termux/Android support: `npm install -g btch-cli` auto-installs OpenTUI's linux-arm64 native package via postinstall (npm skips it on Android because Node reports platform `android` while Bun reports `linux`)
+
+### Changed
+- Release tag prefix renamed from `btch-dev@` to `btch-cli@` so tags match the npm package name
+- Pinned `@opentui/core` / `@opentui/react` to `0.1.88` for reproducible builds
+
 ## [3.0.3] - 2026-08-17
 
 ### Changed
