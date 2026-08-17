@@ -339,6 +339,7 @@ const BUILTIN_TYPED_SLASH_COMMANDS = new Set([
   "/recap",
   "/recaps",
   "/resume",
+  "/settitle",
   "/remote-control",
   "/mcp",
   "/mcps",
@@ -2302,6 +2303,22 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
         openResumePicker();
         return true;
       }
+      if (c.startsWith("/settitle ") || c === "/settitle") {
+        const title = cmd.trim().slice("/settitle".length).trim();
+        if (!title) {
+          setMessages((prev) => [
+            ...prev,
+            buildAssistantEntry(
+              "Usage: /settitle <title>\nExample: /settitle Fix login bug — sets this session's title so it's easy to find in /resume",
+            ),
+          ]);
+          return true;
+        }
+        agent.setSessionTitle(title);
+        setSessionTitle(title);
+        setMessages((prev) => [...prev, buildAssistantEntry(`Session titled: ${title}`)]);
+        return true;
+      }
       if (c === "/wallet") {
         openWalletPicker();
         return true;
@@ -2489,6 +2506,10 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
         case "btw":
           inputRef.current?.clear();
           inputRef.current?.insertText("/btw ");
+          break;
+        case "settitle":
+          inputRef.current?.clear();
+          inputRef.current?.insertText("/settitle ");
           break;
         case "update":
           setIsUpdating(true);

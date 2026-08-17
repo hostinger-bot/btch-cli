@@ -833,6 +833,12 @@ export class Agent {
     return this.session?.title || null;
   }
 
+  setSessionTitle(title: string): void {
+    if (!this.session || !this.sessionStore) return;
+    this.sessionStore.setTitle(this.session.id, title);
+    this.session = { ...this.session, title };
+  }
+
   getChatEntries(): ChatEntry[] {
     if (!this.session) return [];
     return buildChatEntries(this.session.id);

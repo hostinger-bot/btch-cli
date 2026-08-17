@@ -18,6 +18,7 @@ export const SLASH_MENU_ITEMS: SlashMenuItem[] = [
   { id: "models", label: "models", description: "Select a model", aliases: ["model", "mode"] },
   { id: "recaps", label: "recaps", description: "Turn session recaps on/off", aliases: ["recap", "summary"] },
   { id: "resume", label: "resume", description: "Resume an earlier session", aliases: ["history", "sessions"] },
+  { id: "settitle", label: "settitle", description: "Set a title for this session", aliases: ["title", "name"] },
   { id: "new", label: "new session", description: "Start a new session" },
   { id: "commit-push", label: "commit & push", description: "Commit and push" },
   { id: "commit-pr", label: "commit & pr", description: "Commit and open PR" },
