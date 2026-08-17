@@ -21,7 +21,7 @@ Install btch from GitHub Releases.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 1.1.4
+  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 1.0.2
   bash install.sh --binary /path/to/btch
 
 Options:

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-08-17
+
+### Added
+- Installer now auto-selects the correct binary: modern CPUs get the faster build, pre-AVX2 CPUs (e.g. older VMs) automatically get the `-baseline` build
+- Release now ships both linux variants (`btch-linux-x64` and `btch-linux-x64-baseline`)
+
+### Changed
+- Version is now sourced from `package.json` everywhere, so the binary, changelog, and release tags always stay in sync
+
 ## [1.0.0] - 2026-08-17
 
 ### Added

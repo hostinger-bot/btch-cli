@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag to publish (for example btch-dev@1.1.4)"
+        description: "Release tag to publish (for example btch-dev@1.0.2)"
         required: true
 
 permissions:

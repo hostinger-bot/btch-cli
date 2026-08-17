@@ -1,6 +1,7 @@
 import { createMCPClient, type MCPClient } from "@ai-sdk/mcp";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { ToolSet } from "ai";
+import packageJson from "../../package.json";
 import type { McpServerConfig } from "../utils/settings";
 import { validateMcpServerConfig } from "./validate";
 
@@ -50,7 +51,7 @@ export async function buildMcpToolSet(servers: McpServerConfig[]): Promise<McpTo
       const client = await createMCPClient({
         transport: toTransport(server),
         name: `btch-cli-${server.id}`,
-        version: "1.0.0",
+        version: packageJson.version,
       });
       clients.push(client);
 
