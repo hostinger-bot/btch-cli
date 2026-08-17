@@ -8,28 +8,77 @@ The model list is **auto-fetched from your endpoint** when the CLI starts, so yo
 
 ## Install
 
+**Recommended — one-liner** (no prerequisites, downloads the correct binary for your OS, architecture, and CPU):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
 ```
 
-The installer auto-detects your OS, architecture, and CPU capabilities — on x64 machines without AVX2 (e.g. older VMs) it automatically downloads the `-baseline` build so the binary runs instead of crashing.
+What the installer does:
 
-**Alternative installs** (requires Bun on PATH):
+- Detects your OS and architecture (Linux/macOS/Windows, x64/arm64)
+- On x64 machines without AVX2 (e.g. older VMs) it automatically downloads the `-baseline` build so the binary runs instead of crashing
+- Installs to `~/.btch/bin/` and adds it to your `PATH` (via `~/.bashrc`, `~/.zshrc`, or fish config)
+- If it can, it also creates a symlink at `/usr/local/bin/btch` so `btch` works immediately in the current session
+- Verifies the download against `checksums.txt`
+
+**Installer options:**
+
+```bash
+# Install a specific version
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 1.0.2
+
+# Install from a local binary instead of downloading
+bash install.sh --binary /path/to/btch
+
+# Do not edit shell config files
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --no-modify-path
+```
+
+**Alternative install** (requires Bun on PATH):
 
 ```bash
 bun add -g btch-cli
 ```
 
-**Self-management** (script-installed only):
+**Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
+
+---
+
+## Uninstall
+
+**Script-installed btch** (installed via `install.sh`) — remove everything:
 
 ```bash
-btch update
 btch uninstall
-btch uninstall --dry-run
-btch uninstall --keep-config
 ```
 
-**Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
+This removes the binary, `~/.btch`, the `/usr/local/bin/btch` symlink, and the PATH entry added to your shell config. It asks for confirmation first.
+
+**Uninstall options:**
+
+```bash
+btch uninstall --dry-run      # show what would be removed, without removing anything
+btch uninstall --force        # skip the confirmation prompt (for scripts/CI)
+btch uninstall --keep-config  # keep ~/.btch config files (user-settings.json, AGENTS.md)
+btch uninstall --keep-data    # keep ~/.btch data files (db, models, sessions, ...)
+btch uninstall --keep-config --keep-data  # only remove the binary and PATH entry
+```
+
+**Installed via `bun add -g`?** Uninstall with your package manager:
+
+```bash
+bun remove -g btch-cli
+```
+
+**Manual uninstall** (if you installed by hand, or `btch` is no longer available):
+
+```bash
+rm -rf ~/.btch
+rm -f /usr/local/bin/btch
+```
+
+Then remove the `export PATH=$HOME/.btch/bin:$PATH` (or `fish_add_path`) line from your shell config (`~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`).
 
 ---
 
