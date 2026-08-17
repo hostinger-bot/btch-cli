@@ -8,6 +8,7 @@ export interface SlashMenuItem {
 export const SLASH_MENU_ITEMS: SlashMenuItem[] = [
   { id: "exit", label: "exit", description: "Quit the CLI" },
   { id: "help", label: "help", description: "Show available commands" },
+  { id: "apikey", label: "apikey", description: "Change the API key", aliases: ["api-key", "key"] },
   { id: "remote-control", label: "remote-control", description: "Remote control" },
   { id: "agents", label: "agents", description: "Manage custom sub-agents" },
   { id: "schedule", label: "schedule", description: "View scheduled runs" },

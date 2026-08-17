@@ -2244,6 +2244,10 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
         openModelPicker();
         return true;
       }
+      if (c === "/apikey" || c === "/api-key" || c === "/key") {
+        openApiKeyModal();
+        return true;
+      }
       if (c === "/sandbox") {
         openSandboxPicker();
         return true;
@@ -2348,6 +2352,7 @@ export function App({ agent, startupConfig, initialMessage, onExit }: AppProps) 
       agent,
       handleExit,
       openAgentsModal,
+      openApiKeyModal,
       openMcpModal,
       openModelPicker,
       openRecapPicker,
