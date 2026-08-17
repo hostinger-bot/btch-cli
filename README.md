@@ -380,11 +380,16 @@ bun run lint
 ### Releasing
 
 To ship a new version, just create a release in the GitHub UI
-(`Releases → Draft a new release`): pick a tag like `btch-dev@1.2.0` (or let
-GitHub create it), fill in the notes, and hit **Publish release**. The
-`Release` workflow automatically builds the `btch-linux-x64`,
-`btch-darwin-arm64`, and `btch-windows-x64.exe` binaries on native runners,
-computes `checksums.txt`, and attaches everything to the release.
+(`Releases → Draft a new release`): pick a tag like `btch-dev@1.0.4` (or let
+GitHub create it), fill in the notes, and hit **Publish release**. That's it —
+the `Release` workflow handles everything else automatically:
+
+- Builds `btch-linux-x64`, `btch-linux-x64-baseline`, `btch-darwin-arm64`, and
+  `btch-windows-x64.exe` on native runners and attaches them with `checksums.txt`
+- **Publishes the same version to npm** (requires the `NPM_TOKEN` secret in
+  repo settings — version is taken from the tag, so no manual version bump needed)
+
+So releasing `btch-dev@1.0.4` publishes `btch-cli@1.0.4` to npm automatically.
 
 Alternatively, run the workflow manually from the **Actions** tab
 (`Release → Run workflow`) and enter the tag to publish.

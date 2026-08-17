@@ -53,6 +53,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set package version from release tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.version }}"
+          else
+            tag="${{ github.event.release.tag_name }}"
+          fi
+          version="${tag#btch-dev@}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" "$version"
+          echo "package.json version set to ${version}"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -139,13 +151,22 @@ jobs:
 
   # Publish the package to npm on every GitHub release. Requires the
   # NPM_TOKEN secret (Settings → Secrets and variables → Actions) with
-  # publish permissions. Make sure package.json version matches the
-  # release before creating it.
+  # publish permissions. The version is taken from the release tag, so
+  # just create a release like btch-dev@1.0.4 and the package is
+  # published as 1.0.4 automatically.
   npm-publish:
     if: github.event_name == 'release' && secrets.NPM_TOKEN != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set package version from release tag
+        shell: bash
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          version="${tag#btch-dev@}"
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" "$version"
+          echo "package.json version set to ${version}"
 
       - uses: actions/setup-node@v4
         with:
