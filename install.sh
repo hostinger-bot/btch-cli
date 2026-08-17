@@ -333,6 +333,19 @@ echo ""
 echo "Run:"
 echo "  btch --help"
 echo ""
+
+if [[ "$TARGET" != windows-* ]] && ! command -v "${BINARY_NAME}" >/dev/null 2>&1; then
+  echo "Note: '${BINARY_NAME}' is not on your current shell's PATH yet."
+  echo "Either open a new terminal, or make it available right now with:"
+  echo ""
+  if [[ -n "$written_config_file" ]]; then
+    echo "  source ${written_config_file}"
+  else
+    echo "  export PATH=${INSTALL_DIR}:\$PATH"
+  fi
+  echo ""
+fi
+
 echo "To uninstall later:"
 echo "  btch uninstall"
 echo ""
