@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-08-17
+
+### Fixed
+- API key prompt now shows btch branding
+- Installer creates a `/usr/local/bin/btch` symlink so `btch` works immediately after install (falls back to a PATH hint when not possible)
+- Uninstall removes the global symlink so nothing is left dangling
+
+### Changed
+- README now documents full install and uninstall instructions
+
 ## [1.0.2] - 2026-08-17
 
 ### Added
