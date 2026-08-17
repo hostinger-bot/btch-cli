@@ -284,7 +284,7 @@ EOF
 resolve_release_version() {
   if [[ -n "$requested_version" ]]; then
     RESOLVED_VERSION="${requested_version}"
-    RELEASE_BASE_URL="https://github.com/${REPO}/releases/download/btch-dev@${RESOLVED_VERSION}"
+    RELEASE_BASE_URL="https://github.com/${REPO}/releases/download/btch-cli@${RESOLVED_VERSION}"
     return
   fi
 
@@ -292,7 +292,7 @@ resolve_release_version() {
   tag=$(curl -fsSL "${RELEASES_API}/latest" \
     | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' \
     | head -n 1)
-  RESOLVED_VERSION="${tag#btch-dev@}"
+  RESOLVED_VERSION="${tag#btch-cli@}"
   if [[ -z "$RESOLVED_VERSION" ]]; then
     echo "Failed to resolve the latest btch release version." >&2
     exit 1

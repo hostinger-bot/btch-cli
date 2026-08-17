@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag to publish (for example btch-dev@1.0.2)"
+        description: "Release tag to publish (for example btch-cli@3.0.4)"
         required: true
 
 permissions:
@@ -67,7 +67,7 @@ jobs:
           else
             tag="${{ github.event.release.tag_name }}"
           fi
-          version="${tag#btch-dev@}"
+          version="${tag#btch-cli@}"
           node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" "$version"
           echo "package.json version set to ${version}"
 
@@ -168,7 +168,7 @@ jobs:
   # Publish the package to npm on every GitHub release. Requires the
   # NPM_TOKEN secret (Settings → Secrets and variables → Actions) with
   # publish permissions. The version is taken from the release tag, so
-  # just create a release like btch-dev@1.0.4 and the package is
+  # just create a release like btch-cli@3.0.4 and the package is
   # published as 1.0.4 automatically.
   npm-publish:
     if: github.event_name == 'release'
@@ -182,7 +182,7 @@ jobs:
         shell: bash
         run: |
           tag="${{ github.event.release.tag_name }}"
-          version="${tag#btch-dev@}"
+          version="${tag#btch-cli@}"
           node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" "$version"
           echo "package.json version set to ${version}"
 
