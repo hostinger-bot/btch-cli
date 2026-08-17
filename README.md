@@ -59,16 +59,19 @@ yarn global add btch-cli
 **Android / Termux:**
 
 - **One-liner works** — `curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash`
-  detects Termux and downloads the **native Android build** (`btch-android-arm64`,
-  bionic-linked), which runs directly on Termux with the full interactive TUI.
-- **npm route** — `npm install -g btch-cli` also works on Termux (requires Bun
-  for Android; Bun ≥ 1.3.14 supports Android natively). The postinstall hook
-  auto-installs OpenTUI's native ARM64 component, which npm normally skips on
-  Android.
+  detects Termux and installs via npm automatically (Bun's standalone compiled
+  binaries currently crash on Termux due to an upstream Bun bug, so Termux uses
+  the native Bun runtime instead — full interactive TUI included).
+- **npm route manually** — `npm install -g btch-cli` works on Termux (requires
+  Bun for Android; Bun ≥ 1.3.14 supports Android natively). The postinstall
+  hook auto-installs OpenTUI's native ARM64 component, which npm normally skips
+  on Android.
 - **Headless mode** — `btch --prompt "..."` runs without the interactive UI
   and is the most lightweight way to use the agent inside Termux.
 - The release also ships `btch-linux-arm64` (glibc) for Raspberry Pi / ARM
   Linux servers — that one does **not** run on Termux (Termux uses bionic libc).
+  The `btch-android-arm64` asset is built for Android but is currently unused by
+  the installer pending the upstream Bun compiled-binary fix.
 
 **Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
 

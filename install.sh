@@ -69,14 +69,51 @@ mkdir -p "$INSTALL_DIR"
 chmod 700 "$USER_DIR" "$INSTALL_DIR"
 
 is_termux() {
-  # Android/Termux uses the bionic libc, so the glibc linux-arm64 binary
-  # cannot run there ("cannot execute: required file not found"). Detect it
-  # and pick the dedicated android-arm64 build instead.
+  # Android/Termux uses the bionic libc. Bun's standalone compiled binaries
+  # crash on Termux (upstream Bun bug, oven-sh/bun#5085 / #23858), so Termux
+  # installs use the npm route with the native Bun runtime instead.
   [[ -n "${TERMUX_VERSION:-}" ]] && return 0
   [[ -d /data/data/com.termux ]] && return 0
   [[ "$(uname -o 2>/dev/null)" == "Android" ]] && return 0
   return 1
 }
+
+install_on_termux() {
+  cat <<'EOF'
+Termux (Android) detected.
+btch's standalone binaries are compiled with Bun, and Bun's compiled
+executables currently crash on Termux (upstream Bun bug). Installing via npm
+instead — it runs on the native Bun runtime and includes the full interactive
+TUI.
+EOF
+
+  if ! command -v bun >/dev/null 2>&1; then
+    echo "Installing Bun for Termux..."
+    if ! curl -fsSL https://bun.sh/install | bash; then
+      echo "Bun auto-install failed. Install it manually, then re-run this script:" >&2
+      echo "  curl -fsSL https://bun.sh/install | bash" >&2
+      exit 1
+    fi
+    export PATH="$HOME/.bun/bin:$PATH"
+  fi
+
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "npm not found. Install it first (Termux: 'pkg install nodejs'), then re-run this script." >&2
+    exit 1
+  fi
+
+  echo "Installing btch-cli via npm..."
+  npm install -g btch-cli
+  echo ""
+  echo "btch installed. Run:"
+  echo "  btch --help"
+  echo ""
+  exit 0
+}
+
+if is_termux; then
+  install_on_termux
+fi
 
 resolve_target() {
   local raw_os arch
