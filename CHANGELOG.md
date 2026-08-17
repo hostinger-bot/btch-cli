@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-08-17
+
+### Changed
+- Version bumped to 3.0.0 to avoid registry conflicts
+- Auto npm publish on every GitHub release (version derived from release tag)
+- Repository, homepage, and bugs URLs added to package.json
+
 ## [1.0.3] - 2026-08-17
 
 ### Fixed
