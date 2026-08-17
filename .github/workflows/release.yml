@@ -155,8 +155,10 @@ jobs:
   # just create a release like btch-dev@1.0.4 and the package is
   # published as 1.0.4 automatically.
   npm-publish:
-    if: github.event_name == 'release' && secrets.NPM_TOKEN != ''
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -185,6 +187,7 @@ jobs:
         run: bun run build
 
       - name: Publish to npm
+        if: env.NPM_TOKEN != ''
         run: npm publish --ignore-scripts --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
