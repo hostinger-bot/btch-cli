@@ -1,9 +1,12 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "btch-dev@*"
+  # Create a release in the GitHub UI (New release → choose/publish a tag) and
+  # this workflow builds the binaries and attaches them to that release.
+  # Draft the release first, fill in the notes, then hit “Publish release”.
+  release:
+    types: [published]
+  # Manual fallback: run the workflow from the Actions tab with a version.
   workflow_dispatch:
     inputs:
       version:
@@ -94,7 +97,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             tag="${{ github.event.inputs.version }}"
           else
-            tag="${{ github.ref_name }}"
+            tag="${{ github.event.release.tag_name }}"
           fi
           echo "RELEASE_TAG=${tag}" >> "$GITHUB_ENV"
 
@@ -111,8 +114,10 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # When triggered by the `release` event the release already exists, so
+          # just attach the binaries. Manual dispatch creates it with notes.
           tag_name: ${{ env.RELEASE_TAG }}
-          generate_release_notes: true
+          generate_release_notes: ${{ github.event_name != 'release' }}
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-alpha') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-pre') }}
           files: |
             release-assets/**/btch-linux-x64

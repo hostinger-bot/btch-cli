@@ -330,6 +330,18 @@ bun run typecheck
 bun run lint
 ```
 
+### Releasing
+
+To ship a new version, just create a release in the GitHub UI
+(`Releases → Draft a new release`): pick a tag like `btch-dev@1.2.0` (or let
+GitHub create it), fill in the notes, and hit **Publish release**. The
+`Release` workflow automatically builds the `btch-linux-x64`,
+`btch-darwin-arm64`, and `btch-windows-x64.exe` binaries on native runners,
+computes `checksums.txt`, and attaches everything to the release.
+
+Alternatively, run the workflow manually from the **Actions** tab
+(`Release → Run workflow`) and enter the tag to publish.
+
 ---
 
 ## License
