@@ -114,6 +114,13 @@ EOF
 
   echo "Installing btch-cli via npm..."
   npm install -g btch-cli
+
+  # npm >= 11 blocks install scripts by default (allowScripts), which skips
+  # our postinstall. Run it manually so OpenTUI's native linux-arm64 package
+  # is present for the interactive TUI on Termux. It is a no-op elsewhere.
+  if command -v node >/dev/null 2>&1 && [[ -f "$(npm root -g)/btch-cli/scripts/install-opentui-platform.mjs" ]]; then
+    node "$(npm root -g)/btch-cli/scripts/install-opentui-platform.mjs" "@opentui/core-linux-arm64" || true
+  fi
   echo ""
   echo "btch installed. Run:"
   echo "  btch --help"
