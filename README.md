@@ -26,7 +26,7 @@ What the installer does:
 
 ```bash
 # Install a specific version (keep in sync with package.json)
-curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.11
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.12
 
 # Install from a local binary instead of downloading
 bash install.sh --binary /path/to/btch
@@ -59,19 +59,22 @@ yarn global add btch-cli
 **Android / Termux (supported):**
 
 - **One-liner works** — `curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash`
-  detects Termux and installs via npm automatically (Bun's standalone compiled
-  binaries currently crash on Termux due to an upstream Bun bug, so Termux uses
-  the native Bun runtime instead — full interactive TUI included). The npm
-  install is pure-JS (no native builds), so it works out of the box.
-- **npm route manually** — `npm install -g btch-cli` works on Termux (requires
-  Bun for Android; Bun ≥ 1.3.14 supports Android natively). The postinstall
-  hook auto-installs OpenTUI's native ARM64 component, which npm normally skips
-  on Android.
+  detects Termux and does everything automatically: installs `proot-distro`,
+  sets up a Debian environment, and puts the full `btch` (interactive TUI
+  included) inside it. Why: Android's seccomp filter blocks syscalls Bun needs
+  ("Bad system call"), so btch runs inside a Debian environment where it works
+  normally. First install downloads the Debian rootfs (~200MB) and takes a few
+  minutes; afterwards `btch` runs straight from Termux's PATH.
 - **Headless mode** — `btch --prompt "..."` runs without the interactive UI
   and is the most lightweight way to use the agent inside Termux.
+- **Manual alternative** — `npm install -g btch-cli` also works on Termux if
+  Bun ≥ 1.3.14 is installed and not blocked by your device's seccomp filter
+  (some devices/ROMs block it with "Bad system call"). The installer's Debian
+  route is the reliable option.
 - **ARM Linux (Raspberry Pi etc.)** — the release ships `btch-linux-arm64`
-  (glibc) for ARM Linux servers. Note that one does **not** run on Termux
-  (Termux uses bionic libc); on Termux always use the installer/npm route above.
+  (glibc) for ARM Linux servers. Note that one does **not** run directly on
+  Termux (Termux uses bionic libc + seccomp); on Termux use the installer
+  above, which runs it inside Debian.
 
 **Prerequisites:** an **API key** for your OpenAI-compatible endpoint and a modern terminal emulator for the interactive OpenTUI experience. Headless `--prompt` mode does not depend on terminal UI support. If you want host desktop automation via the built-in computer sub-agent, also enable **Accessibility** permission for your terminal app on macOS.
 

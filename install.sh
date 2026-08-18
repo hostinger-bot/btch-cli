@@ -21,7 +21,7 @@ Install btch from GitHub Releases.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.11
+  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.12
   bash install.sh --binary /path/to/btch
 
 Options:
@@ -69,9 +69,9 @@ mkdir -p "$INSTALL_DIR"
 chmod 700 "$USER_DIR" "$INSTALL_DIR"
 
 is_termux() {
-  # Android/Termux uses the bionic libc. Bun's standalone compiled binaries
-  # crash on Termux (upstream Bun bug, oven-sh/bun#5085 / #23858), so Termux
-  # installs use the npm route with the native Bun runtime instead.
+  # Android/Termux uses the bionic libc, and Android's seccomp filter blocks
+  # syscalls Bun needs ("Bad system call"), so Termux installs run btch inside
+  # a proot-distro Debian environment instead (full glibc, no seccomp).
   [[ -n "${TERMUX_VERSION:-}" ]] && return 0
   [[ -d /data/data/com.termux ]] && return 0
   [[ "$(uname -o 2>/dev/null)" == "Android" ]] && return 0
@@ -81,30 +81,34 @@ is_termux() {
 install_on_termux() {
   cat <<'EOF'
 Termux (Android) detected.
-btch's standalone binaries are compiled with Bun, and Bun's compiled
-executables currently crash on Termux (upstream Bun bug). Installing via npm
-instead — it runs on the native Bun runtime and includes the full interactive
-TUI.
+Android's seccomp filter blocks syscalls Bun needs ("Bad system call"), so
+btch is installed inside a proot-distro Debian environment where it runs
+normally with the full interactive TUI. This takes a few minutes on first
+install (it downloads the Debian rootfs).
+
 EOF
 
-  if ! command -v bun >/dev/null 2>&1; then
-    echo "Installing Bun for Termux..."
-    if ! curl -fsSL https://bun.sh/install | bash; then
-      echo "Bun auto-install failed. Install it manually, then re-run this script:" >&2
-      echo "  curl -fsSL https://bun.sh/install | bash" >&2
+  # 1) Make sure proot-distro is available.
+  if ! command -v proot-distro >/dev/null 2>&1; then
+    echo "Installing proot-distro..."
+    pkg install -y proot-distro || {
+      echo "Failed to install proot-distro. Run 'pkg install proot-distro' manually, then re-run this script." >&2
       exit 1
-    fi
-    export PATH="$HOME/.bun/bin:$PATH"
+    }
   fi
 
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "npm not found. Install it first (Termux: 'pkg install nodejs'), then re-run this script." >&2
-    exit 1
+  local rootfs="${PREFIX}/var/lib/proot-distro/installed-rootfs/debian"
+
+  # 2) Install the Debian rootfs on first run.
+  if [[ ! -d "$rootfs" ]]; then
+    echo "Installing Debian environment (first run downloads ~200MB, be patient)..."
+    proot-distro install debian || {
+      echo "Debian install failed. Run 'proot-distro install debian' manually, then re-run this script." >&2
+      exit 1
+    }
   fi
 
-  # Remove leftovers from a previous script-based install (the glibc binary
-  # that crashes on Termux, plus its symlinks). npm refuses to overwrite an
-  # existing file at its global bin path (EEXIST), so clear them first.
+  # Remove leftovers from previous installs (npm route, glibc binary, symlinks).
   rm -f "$HOME/.btch/bin/btch"
   rm -f "/usr/local/bin/btch"
   if [[ -n "${PREFIX:-}" ]]; then
@@ -112,25 +116,66 @@ EOF
   fi
   rm -rf "$HOME/.btch"
 
-  echo "Installing btch-cli via npm..."
-  npm install -g btch-cli
+  # 3) Inside Debian the full glibc + no seccomp means the standalone arm64
+  #    binary works. Resolve the version and download it into the rootfs.
+  ASSET_NAME="btch-linux-arm64"
+  BINARY_NAME="btch"
+  resolve_release_version
 
-  # npm >= 11 blocks install scripts by default (allowScripts), which skips
-  # our postinstall. Run it manually so OpenTUI's native linux-arm64 package
-  # is present for the interactive TUI on Termux. It is a no-op elsewhere.
-  if command -v node >/dev/null 2>&1 && [[ -f "$(npm root -g)/btch-cli/scripts/install-opentui-platform.mjs" ]]; then
-    node "$(npm root -g)/btch-cli/scripts/install-opentui-platform.mjs" "@opentui/core-linux-arm64" || true
-  fi
+  local tmp_dir binary_file checksum_file
+  tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/btch-install.XXXXXX")
+  binary_file="${tmp_dir}/${ASSET_NAME}"
+  checksum_file="${tmp_dir}/checksums.txt"
+
+  echo "Downloading ${ASSET_NAME} (${RESOLVED_VERSION})..."
+  curl -fSL "${RELEASE_BASE_URL}/${ASSET_NAME}" -o "$binary_file"
+  curl -fsSL "${RELEASE_BASE_URL}/checksums.txt" -o "$checksum_file"
+  verify_checksum "$binary_file" "$checksum_file"
+
+  mkdir -p "$rootfs/usr/local/bin"
+  cp "$binary_file" "$rootfs/usr/local/bin/${BINARY_NAME}"
+  chmod 755 "$rootfs/usr/local/bin/${BINARY_NAME}"
+  rm -rf "$tmp_dir"
+
+  # 4) Wrapper so `btch` runs inside Debian straight from Termux's PATH.
+  local wrapper="${PREFIX}/bin/btch"
+  cat > "$wrapper" <<WRAPPER
+#!${PREFIX}/bin/bash
+exec proot-distro login debian -- /usr/local/bin/btch "\$@"
+WRAPPER
+  chmod 755 "$wrapper"
+
+  # 5) Metadata so `btch uninstall` cleans up the wrapper + binary.
+  mkdir -p "$USER_DIR"
+  cat > "$METADATA_PATH" <<METAEOF
+{
+  "schemaVersion": 1,
+  "installMethod": "script",
+  "version": "$(json_escape "$RESOLVED_VERSION")",
+  "repo": "$(json_escape "$REPO")",
+  "binaryPath": "$(json_escape "$rootfs/usr/local/bin/btch")",
+  "installDir": "$(json_escape "$rootfs/usr/local/bin")",
+  "assetName": "$(json_escape "$ASSET_NAME")",
+  "target": "android-arm64",
+  "installedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "shellConfigPath": null,
+  "pathCommand": null,
+  "globalBinPath": "$(json_escape "$wrapper")"
+}
+METAEOF
+  chmod 600 "$METADATA_PATH"
+
   echo ""
-  echo "btch installed. Run:"
+  echo "btch ${RESOLVED_VERSION} installed inside a proot-distro Debian environment."
+  echo ""
+  echo "Run:"
   echo "  btch --help"
   echo ""
+  echo "To uninstall later:"
+  echo "  btch uninstall"
+  echo "  proot-distro remove debian   # optional: also remove the Debian environment"
   exit 0
 }
-
-if is_termux; then
-  install_on_termux
-fi
 
 resolve_target() {
   local raw_os arch
@@ -408,6 +453,10 @@ resolve_installed_version() {
   INSTALLED_VERSION=$("${INSTALL_DIR}/${BINARY_NAME}" --version 2>/dev/null | tr -d '\r') || true
   : "${INSTALLED_VERSION:=unknown}"
 }
+
+if is_termux; then
+  install_on_termux
+fi
 
 resolve_target
 

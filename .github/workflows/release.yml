@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag to publish (for example btch-cli@3.0.11)"
+        description: "Release tag to publish (for example btch-cli@3.0.12)"
         required: true
 
 permissions:
@@ -186,7 +186,7 @@ jobs:
   # Publish the package to npm on every GitHub release. Requires the
   # NPM_TOKEN secret (Settings → Secrets and variables → Actions) with
   # publish permissions. The version is taken from the release tag, so
-  # just create a release like btch-cli@3.0.11 and the package is
+  # just create a release like btch-cli@3.0.12 and the package is
   # published as 1.0.4 automatically.
   npm-publish:
     if: github.event_name == 'release'
