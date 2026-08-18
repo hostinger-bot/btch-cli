@@ -26,7 +26,7 @@ What the installer does:
 
 ```bash
 # Install a specific version (keep in sync with package.json)
-curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.12
+curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.13
 
 # Install from a local binary instead of downloading
 bash install.sh --binary /path/to/btch
@@ -60,11 +60,13 @@ yarn global add btch-cli
 
 - **One-liner works** — `curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash`
   detects Termux and does everything automatically: installs `proot-distro`,
-  sets up a Debian environment, and puts the full `btch` (interactive TUI
-  included) inside it. Why: Android's seccomp filter blocks syscalls Bun needs
-  ("Bad system call"), so btch runs inside a Debian environment where it works
-  normally. First install downloads the Debian rootfs (~200MB) and takes a few
-  minutes; afterwards `btch` runs straight from Termux's PATH.
+  sets up a Debian environment, downloads the `btch` CLI into Termux home
+  (`~/.btch/bin/btch`), and adds a `btch` wrapper to Termux's PATH that runs
+  the CLI inside Debian (full interactive TUI included). Why: Android's
+  seccomp filter blocks syscalls Bun needs ("Bad system call"), so btch runs
+  inside a Debian environment where it works normally. First install downloads
+  the Debian rootfs (~200MB) and takes a few minutes; afterwards `btch` runs
+  straight from Termux's PATH.
 - **Headless mode** — `btch --prompt "..."` runs without the interactive UI
   and is the most lightweight way to use the agent inside Termux.
 - **Manual alternative** — `npm install -g btch-cli` also works on Termux if

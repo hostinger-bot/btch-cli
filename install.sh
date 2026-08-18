@@ -21,7 +21,7 @@ Install btch from GitHub Releases.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.12
+  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.13
   bash install.sh --binary /path/to/btch
 
 Options:
@@ -115,9 +115,12 @@ EOF
     rm -f "${PREFIX}/bin/btch"
   fi
   rm -rf "$HOME/.btch"
+  mkdir -p "$INSTALL_DIR"
 
   # 3) Inside Debian the full glibc + no seccomp means the standalone arm64
-  #    binary works. Resolve the version and download it into the rootfs.
+  #    binary works. Resolve the version and download it to Termux home
+  #    (~/.btch/bin) — the wrapper bind-mounts it into Debian at runtime, so
+  #    `btch` runs inside Debian while the CLI stays visible in Termux home.
   ASSET_NAME="btch-linux-arm64"
   BINARY_NAME="btch"
   resolve_release_version
@@ -132,18 +135,33 @@ EOF
   curl -fsSL "${RELEASE_BASE_URL}/checksums.txt" -o "$checksum_file"
   verify_checksum "$binary_file" "$checksum_file"
 
-  mkdir -p "$rootfs/usr/local/bin"
-  cp "$binary_file" "$rootfs/usr/local/bin/${BINARY_NAME}"
-  chmod 755 "$rootfs/usr/local/bin/${BINARY_NAME}"
+  cp "$binary_file" "${INSTALL_DIR}/${BINARY_NAME}"
+  chmod 755 "${INSTALL_DIR}/${BINARY_NAME}"
   rm -rf "$tmp_dir"
 
-  # 4) Wrapper so `btch` runs inside Debian straight from Termux's PATH.
+  # Best-effort: also copy into the Debian rootfs so `btch` works when
+  # logging into Debian directly. The wrapper below does not depend on this.
+  if [[ -d "$rootfs" ]]; then
+    mkdir -p "$rootfs/usr/local/bin" 2>/dev/null || true
+    cp "$binary_file" "$rootfs/usr/local/bin/${BINARY_NAME}" 2>/dev/null || true
+    chmod 755 "$rootfs/usr/local/bin/${BINARY_NAME}" 2>/dev/null || true
+  fi
+
+  # 4) Wrapper: bind-mount ~/.btch/bin into Debian and run the binary there,
+  #    so `btch` works from Termux even if the rootfs lives elsewhere.
   local wrapper="${PREFIX}/bin/btch"
   cat > "$wrapper" <<WRAPPER
 #!${PREFIX}/bin/bash
-exec proot-distro login debian -- /usr/local/bin/btch "\$@"
+exec proot-distro login --bind "${INSTALL_DIR}:/usr/local/btch" debian -- /usr/local/btch/btch "\$@"
 WRAPPER
   chmod 755 "$wrapper"
+
+  # Verify the binary actually starts through the wrapper.
+  if ! "$wrapper" --version >/dev/null 2>&1; then
+    echo ""
+    echo "Warning: btch did not start inside Debian yet. Check that the Debian"
+    echo "environment exists (proot-distro list) and works (proot-distro login debian)." >&2
+  fi
 
   # 5) Metadata so `btch uninstall` cleans up the wrapper + binary.
   mkdir -p "$USER_DIR"
@@ -153,8 +171,8 @@ WRAPPER
   "installMethod": "script",
   "version": "$(json_escape "$RESOLVED_VERSION")",
   "repo": "$(json_escape "$REPO")",
-  "binaryPath": "$(json_escape "$rootfs/usr/local/bin/btch")",
-  "installDir": "$(json_escape "$rootfs/usr/local/bin")",
+  "binaryPath": "$(json_escape "${INSTALL_DIR}/${BINARY_NAME}")",
+  "installDir": "$(json_escape "$INSTALL_DIR")",
   "assetName": "$(json_escape "$ASSET_NAME")",
   "target": "android-arm64",
   "installedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
