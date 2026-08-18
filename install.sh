@@ -149,9 +149,19 @@ EOF
 
   # 4) Wrapper: bind-mount ~/.btch/bin into Debian and run the binary there,
   #    so `btch` works from Termux even if the rootfs lives elsewhere.
+  #    `uninstall` is handled here in Termux (the binary runs inside Debian
+  #    with HOME=/root, so it cannot see Termux's install.json).
   local wrapper="${PREFIX}/bin/btch"
   cat > "$wrapper" <<WRAPPER
 #!${PREFIX}/bin/bash
+if [[ "\${1:-}" == "uninstall" ]]; then
+  rm -f "${INSTALL_DIR}/btch"
+  rm -f "${wrapper}"
+  rm -rf "${USER_DIR}"
+  echo "btch uninstalled."
+  echo "To also remove the Debian environment, run: proot-distro remove debian"
+  exit 0
+fi
 exec proot-distro login --bind "${INSTALL_DIR}:/usr/local/btch" debian -- /usr/local/btch/btch "\$@"
 WRAPPER
   chmod 755 "$wrapper"
