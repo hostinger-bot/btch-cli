@@ -21,7 +21,7 @@ Install btch from GitHub Releases.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.14
+  curl -fsSL https://raw.githubusercontent.com/hostinger-bot/btch-cli/main/install.sh | bash -s -- --version 3.0.15
   bash install.sh --binary /path/to/btch
 
 Options:
@@ -108,7 +108,7 @@ EOF
     }
   fi
 
-  # Remove leftovers from previous installs (npm route, glibc binary, symlinks).
+  # Remove leftovers from previous installs (npm route, old binary, wrapper, stale PATH).
   rm -f "$HOME/.btch/bin/btch"
   rm -f "/usr/local/bin/btch"
   if [[ -n "${PREFIX:-}" ]]; then
@@ -117,10 +117,25 @@ EOF
   rm -rf "$HOME/.btch"
   mkdir -p "$INSTALL_DIR"
 
+  # Clean up old PATH entries pointing to ~/.btch/bin from shell config
+  # files (v3.0.13 and earlier). These would shadow the wrapper at
+  # $PREFIX/bin/btch and cause the glibc binary to be executed directly
+  # in Termux, producing "cannot execute: required file not found".
+  for config in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile" "$HOME/.zshrc" "$HOME/.zshenv"; do
+    if [[ -f "$config" ]]; then
+      sed -i "\|.btch/bin|d" "$config" 2>/dev/null || true
+      sed -i "\|# btch|d" "$config" 2>/dev/null || true
+    fi
+  done
+
   # 3) Inside Debian the full glibc + no seccomp means the standalone arm64
-  #    binary works. Resolve the version and download it to Termux home
-  #    (~/.btch/bin) — the wrapper bind-mounts it into Debian at runtime, so
-  #    `btch` runs inside Debian while the CLI stays visible in Termux home.
+  #    binary works. Resolve the version and download to ~/.btch/runtime/ —
+  #    NOT ~/.btch/bin/ (which might be on PATH from old installs and would
+  #    shadow the wrapper). The wrapper bind-mounts the runtime dir into
+  #    Debian at /usr/local/btch.
+  local RUNTIME_DIR="${USER_DIR}/runtime"
+  mkdir -p "$RUNTIME_DIR"
+
   ASSET_NAME="btch-linux-arm64"
   BINARY_NAME="btch"
   resolve_release_version
@@ -135,8 +150,8 @@ EOF
   curl -fsSL "${RELEASE_BASE_URL}/checksums.txt" -o "$checksum_file"
   verify_checksum "$binary_file" "$checksum_file"
 
-  cp "$binary_file" "${INSTALL_DIR}/${BINARY_NAME}"
-  chmod 755 "${INSTALL_DIR}/${BINARY_NAME}"
+  cp "$binary_file" "${RUNTIME_DIR}/${BINARY_NAME}"
+  chmod 755 "${RUNTIME_DIR}/${BINARY_NAME}"
   rm -rf "$tmp_dir"
 
   # Best-effort: also copy into the Debian rootfs so `btch` works when
@@ -147,22 +162,27 @@ EOF
     chmod 755 "$rootfs/usr/local/bin/${BINARY_NAME}" 2>/dev/null || true
   fi
 
-  # 4) Wrapper: bind-mount ~/.btch/bin into Debian and run the binary there,
-  #    so `btch` works from Termux even if the rootfs lives elsewhere.
+  # 4) Wrapper: bind-mount ~/.btch/runtime into Debian and run the binary
+  #    there. The wrapper lives at $PREFIX/bin/btch (already on PATH), so
+  #    typing `btch` finds the wrapper, not the glibc binary.
   #    `uninstall` is handled here in Termux (the binary runs inside Debian
   #    with HOME=/root, so it cannot see Termux's install.json).
   local wrapper="${PREFIX}/bin/btch"
   cat > "$wrapper" <<WRAPPER
 #!${PREFIX}/bin/bash
 if [[ "\${1:-}" == "uninstall" ]]; then
-  rm -f "${INSTALL_DIR}/btch"
+  rm -f "${RUNTIME_DIR}/btch"
   rm -f "${wrapper}"
   rm -rf "${USER_DIR}"
   echo "btch uninstalled."
   echo "To also remove the Debian environment, run: proot-distro remove debian"
   exit 0
 fi
-exec proot-distro login --bind "${INSTALL_DIR}:/usr/local/btch" debian -- /usr/local/btch/btch "\$@"
+if ! proot-distro login --bind "${RUNTIME_DIR}:/usr/local/btch" debian -- /usr/local/btch/btch "\$@"; then
+  echo "btch failed to start inside Debian." >&2
+  echo "Make sure your Debian environment is working: proot-distro login debian" >&2
+  exit 1
+fi
 WRAPPER
   chmod 755 "$wrapper"
 
@@ -181,8 +201,8 @@ WRAPPER
   "installMethod": "script",
   "version": "$(json_escape "$RESOLVED_VERSION")",
   "repo": "$(json_escape "$REPO")",
-  "binaryPath": "$(json_escape "${INSTALL_DIR}/${BINARY_NAME}")",
-  "installDir": "$(json_escape "$INSTALL_DIR")",
+  "binaryPath": "$(json_escape "${RUNTIME_DIR}/${BINARY_NAME}")",
+  "installDir": "$(json_escape "$RUNTIME_DIR")",
   "assetName": "$(json_escape "$ASSET_NAME")",
   "target": "android-arm64",
   "installedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
@@ -198,6 +218,8 @@ METAEOF
   echo ""
   echo "Run:"
   echo "  btch --help"
+  echo ""
+  echo "If 'btch' is not found right away, run: hash -r"
   echo ""
   echo "To uninstall later:"
   echo "  btch uninstall"

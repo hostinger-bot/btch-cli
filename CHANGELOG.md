@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.15] - 2026-08-22
+
+### Fixed
+- Termux: binary now stored in `~/.btch/runtime/` (not `~/.btch/bin/`) so old PATH entries from previous installs don't shadow the wrapper and cause "cannot execute: required file not found"
+- Termux: old `~/.btch/bin` PATH entries cleaned from `.bashrc`/`.zshrc`/`.profile` on install
+- Termux: wrapper now shows a clear error message if proot-distro Debian fails to start
+
 ## [3.0.14] - 2026-08-18
 
 ### Fixed
